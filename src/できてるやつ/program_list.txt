@@ -1,0 +1,5 @@
+cmd_vel_tenssy_gyroPID: CANからXY受付、姿勢維持
+kakudo_can: cmd_vel_tenssy_gyroPID + CANからの回転受付可能
+arg_arm_mada: テーブル・アームの動作（未完成）
+arg_table: PG上で決めた位置にテーブルが動く
+arm_servo: とりあえずアーム動く（永久に ほぼサンプル）
