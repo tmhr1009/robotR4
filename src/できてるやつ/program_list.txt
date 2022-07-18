@@ -1,5 +1,5 @@
-cmd_vel_tenssy_gyroPID: CAN‚©‚çXYó•tAp¨ˆÛ
-kakudo_can: cmd_vel_tenssy_gyroPID + CAN‚©‚ç‚Ì‰ñ“]ó•t‰Â”\
-arg_arm_mada: ƒe[ƒuƒ‹EƒA[ƒ€‚Ì“®ìi–¢Š®¬j
-arg_table: PGã‚ÅŒˆ‚ß‚½ˆÊ’u‚Éƒe[ƒuƒ‹‚ª“®‚­
-arm_servo: ‚Æ‚è‚ ‚¦‚¸ƒA[ƒ€“®‚­i‰i‹v‚É ‚Ù‚ÚƒTƒ“ƒvƒ‹j
+ï»¿cmd_vel_tenssy_gyroPID: CANã‹ã‚‰XYå—ä»˜ã€å§¿å‹¢ç¶­æŒ
+kakudo_can: cmd_vel_tenssy_gyroPID + CANã‹ã‚‰ã®å›è»¢å—ä»˜å¯èƒ½
+arg_arm_mada: ãƒ†ãƒ¼ãƒ–ãƒ«ãƒ»ã‚¢ãƒ¼ãƒ ã®å‹•ä½œï¼ˆæœªå®Œæˆï¼‰
+arg_table: PGä¸Šã§æ±ºã‚ãŸä½ç½®ã«ãƒ†ãƒ¼ãƒ–ãƒ«ãŒå‹•ã
+arm_servo: ã¨ã‚Šã‚ãˆãšã‚¢ãƒ¼ãƒ å‹•ãï¼ˆæ°¸ä¹…ã« ã»ã¼ã‚µãƒ³ãƒ—ãƒ«ï¼‰
