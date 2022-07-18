@@ -6,9 +6,6 @@
 
 int led = 13;
 
-Servo myservo_ver; //垂直 88(down), 100(up), 95(stop)
-Servo myservo_par; //並行 87(flont), 100(back), 94(stop)
-
 // create CAN object
 FlexCAN CANTransmitter(1000000);
 static CAN_message_t msg;
@@ -16,10 +13,10 @@ static CAN_message_t rxmsg;
 
 Pid pid_ang;
 
-//pos[0] テーブルホーム
-int pos[7] = {695, 1865, 3035, 4205, 5375, 6545, 7715};
+//table_pos[0] テーブルホーム
+int table_pos[7] = {695, 1865, 3035, 4205, 5375, 6545, 7715};
 
-int yaw_tgt_ang = pos[0]; //目標値
+int yaw_tgt_ang = table_pos[0]; //目標値
 
 int cou = 0;
 int inout = 0;//0=in(拾う), 1=out(出す)
@@ -40,7 +37,7 @@ void setup() {
   myservo_par.attach(23);
   MsTimer2::set(2, timerInt);
   MsTimer2::start();
-  yaw_tgt_ang = pos[0];
+  yaw_tgt_ang = table_pos[0];
 }
 
 int u[4] = {0};
@@ -78,7 +75,7 @@ void loop() {
             break;
           case 3:
             //置くところまでテーブル回転
-            yaw_tgt_ang = pos[place];
+            yaw_tgt_ang = table_pos[place];
             if (arg_move_end() == 0) {
               stage_arm_pick++;
             }
@@ -89,7 +86,7 @@ void loop() {
         }
       } else { //拾う→載せるまで終わったあと
         //テーブルホームに戻る
-        yaw_tgt_ang = pos[0];
+        yaw_tgt_ang = table_pos[0];
         //吸盤脱力
         stage_arm_pick = 0;
         flag1 = 0;
@@ -99,7 +96,7 @@ void loop() {
     else if (inout == 1) {
       if (flag2 == 0) {
         //出すところの指定
-        yaw_tgt_ang = pos[place];
+        yaw_tgt_ang = table_pos[place];
         switch (stage_arm_rele) {
           case 0:
             stage_arm_pick++;
@@ -124,12 +121,12 @@ void loop() {
         }
       } else { //出し終わったあと
         //テーブルホームに戻る
-        yaw_tgt_ang = pos[0];
+        yaw_tgt_ang = table_pos[0];
         //吸盤脱力
         stage_arm_rele = 0;
         flag2 = 0;
       }
-    }
+    }               
 
 
 
@@ -157,61 +154,5 @@ void timerInt() {
     if (yaw_tgt_ang - now_ang > 4095)now_ang = now_ang + 8191;
     if (yaw_tgt_ang - now_ang < -4095)now_ang = now_ang - 8191;
     pid_ang.now_value(now_ang);
-  }
-}
-
-//アーム降下 ver_down
-int arm_ver_down(int init_tim, int now_tim) {
-  if (now_tim - init_tim < 1000) { //11000
-    Serial.println(now_tim - init_tim);
-    myservo_ver.write(88);
-    return 1;
-  } else {
-    myservo_ver.write(94);
-    return 0;
-  }
-}
-
-//アーム上昇 ver_up
-int arm_ver_up(int init_tim, int now_tim) {
-  if (now_tim - init_tim < 1000) {//13500
-    Serial.println(now_tim - init_tim);
-    myservo_ver.write(102);
-    return 1;
-  } else {
-    myservo_ver.write(94);
-    return 0;
-  }
-}
-
-//アーム前進 par_flont
-int arm_par_flont(int init_tim, int now_tim) {
-  if (now_tim - init_tim < 10000) {
-    Serial.println(now_tim - init_tim);
-    myservo_par.write(87);
-    return 1;
-  } else {
-    myservo_par.write(94);
-    return 0;
-  }
-}
-
-//アーム後退 par_back
-int arm_par_back(int init_tim, int now_tim) {
-  if (now_tim - init_tim < 10000) {
-    Serial.println(now_tim - init_tim);
-    myservo_par.write(103);
-    return 1;
-  } else {
-    myservo_par.write(94);
-    return 0;
-  }
-}
-
-int arg_move_end() {
-  if ((pos[place] - 50 < now_ang) && (now_ang < pos[place] + 50)) {
-    return 0;
-  } else {
-    return 1;
   }
 }
