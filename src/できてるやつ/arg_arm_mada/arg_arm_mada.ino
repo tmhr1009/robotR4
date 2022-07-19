@@ -35,7 +35,7 @@ int hand_task = 0;
 int u[4] = {0};
 
 void setup() {
-  tgt_ang = table_pos[0];
+  tgt_ang = table_pos[1];
   Serial.begin(115200);
   CANTransmitter.begin();
   pinMode(led, OUTPUT);
@@ -58,6 +58,8 @@ void loop() {
   Serial.println(place);
   Serial.print("hand_task: ");
   Serial.println(hand_task);
+    Serial.print("flag1: ");
+  Serial.println(flag1);
   Serial.println();
 
   //目標値になったら
@@ -65,7 +67,7 @@ void loop() {
     if (place == 7) { //一周したら0に
       place = 0;
     }
-
+    Serial.println("kokozikkousiteimasu");
     //0=ca(拾う)
     if (ca_re == 0) {
       if (flag1 == 0) {
@@ -151,6 +153,8 @@ void loop() {
 
   }
 
+
+
   msg.id = 0x1FF;
   msg.len = 8;
   for (int i = 0; i < 4; i++){
@@ -159,7 +163,7 @@ void loop() {
   
   for (int i = 0; i < msg.len; i++) {
     msg.buf[i * 2] = u[i] >> 8;
-    msg.buf[i * 2 + 1] = u[i] & 0x00FF;
+//    msg.buf[i * 2 + 1] = u[i] & 0x00FF;
   }
 
   digitalWrite(led, !digitalRead(led));
