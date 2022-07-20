@@ -6,8 +6,13 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 #include "pid.h"
+#include <FastLED.h>
 
 #define sin120 0.86602540378
+
+#define NUM_LEDS 5
+#define DATA_PIN 21
+CRGB leds[NUM_LEDS];
 
 Pid pid0;
 Pid pid1;
@@ -16,6 +21,7 @@ Pid pidpid;
 
 FlexCAN CANTransmitter(1000000);
 static CAN_message_t msg;
+static CAN_message_t state_msg;
 static CAN_message_t rxmsg;
 
 Adafruit_BNO055 bno = Adafruit_BNO055(-1, 0x28);
@@ -33,17 +39,31 @@ int goal_dir = 0;
 
 void setup() {
   CANTransmitter.begin();
-  pinMode(13, OUTPUT);
   pid0.init(5.1, 0.06, 0);
   pid1.init(3.8, 0.04, 0);
   pid2.init(6.2, 0.05, 0);
   pidpid.init(150.0, 0, 1);
   Serial.begin(115200);
+  msg.id = 0x200;
+  msg.len = 8;
+  state_msg.id = 0x0;
+  state_msg.len = 2;
+  state_msg.buf[0] = 0; //待機中
+  state_msg.buf[1] = 0; //北向き
+  FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
+  for (int i = 0; i < NUM_LEDS; i++)
+    leds[i] = CRGB(255, 255, 0);//黄
+  attachInterrupt(2, robo_reset, CHANGE);//reset 0で押下
+  attachInterrupt(8, robo_start, CHANGE);//start 0で押下
+  pinMode(13, INPUT); //emergency 1で押下
+  pinMode(5, OUTPUT); //ブザー
+  digitalWrite(5, LOW);
   MsTimer2::set(2, timerInt);
   MsTimer2::start();
   if (!bno.begin())
   {
     Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    digitalWrite(5, HIGH);
     while (1);
   }
 }
@@ -70,9 +90,9 @@ void loop() {
 
   //goaltg = goaltg + pos_dir[goal_dir];
 
-  vx=vel[0];
-  vy=vel[1];
-  
+  vx = vel[0];
+  vy = vel[1];
+
   Serial.print("vel[] : ");
   Serial.print(vel[0]);
   Serial.print(", ");
@@ -96,8 +116,6 @@ void loop() {
   u[1] = pid1.pid_out(u[1]);
   u[2] = pid2.pid_out(u[2]);
 
-  msg.id = 0x200;
-  msg.len = 8;
   for (int i = 0; i < msg.len; i++) {
     msg.buf[i * 2] = u[i] >> 8;
     msg.buf[i * 2 + 1] = u[i] & 0xFF;
@@ -108,8 +126,14 @@ void loop() {
 }
 
 void timerInt() {
+  if (digitalRead(13) == HIGH) {
+    state_msg.buf[0] = 4;
+    for (int i = 0; i < NUM_LEDS; i++)
+      leds[i] = CRGB(0, 255, 0);//赤
+  }
   if (flag) {
     CANTransmitter.write(msg);
+    CANTransmitter.write(state_msg);
   }
   while ( CANTransmitter.read(rxmsg) ) {
     if (rxmsg.id == 0x70) {
@@ -129,4 +153,18 @@ void timerInt() {
       pid2.now_value(rxmsg.buf[2] * 256 + rxmsg.buf[3]);
     }
   }
+  FastLED.show();
+}
+
+void robo_reset() {
+  state_msg.buf[0] = 0;
+  for (int i = 0; i < NUM_LEDS; i++)
+    leds[i] = CRGB(255, 255, 0);//黄
+}
+
+void robo_start() {
+  if (state_msg.buf[0] == 0)
+    for (int i = 0; i < NUM_LEDS; i++)
+      leds[i] = CRGB(255, 0, 0);//緑
+  state_msg.buf[0] = 1;
 }
