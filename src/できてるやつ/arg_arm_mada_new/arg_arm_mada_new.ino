@@ -19,6 +19,8 @@ Pid pid_ang;
 //table_pos[0] テーブルホーム
 int table_pos[7] = {695, 1865, 3035, 4205, 5375, 6545, 7715};
 
+int hand_num=0;
+
 int cou = 0;
 int ca_re = 0;//0=(停止), 1=ca(拾う), 2=re(出す)
 int flag1 = 0;//catch=ca switch用 動作終了後1になる
@@ -57,18 +59,20 @@ void loop() {
   Serial.println(place);
   Serial.print("hand_task: ");
   Serial.println(hand_task);
-//  Serial.print("flag1: ");
-//  Serial.println(flag1);
+  //  Serial.print("flag1: ");
+  //  Serial.println(flag1);
   Serial.print("now_tgt_place: ");
   Serial.println(now_tgt_place);
   Serial.print("stage_arm_pick: ");
   Serial.println(stage_arm_pick);
+  Serial.print("hand_num: ");
+  Serial.println(hand_num);
   Serial.println();
 
   if (!(hand_task == ca_re)) {
-        flag1 = 0;
-      }
-      ca_re = hand_task;
+    flag1 = 0;
+  }
+  ca_re = hand_task;
 
   //0=ca(拾う)
   if (ca_re == 1) {
@@ -175,14 +179,14 @@ void loop() {
 
     digitalWrite(led, !digitalRead(led));
     cou++;
-    delay(5);
   }
+  delay(5);
 }
 
 
 void timerInt() {
   tgt_ang = table_pos[now_tgt_place];
-    CANTransmitter.write(msg);
+  CANTransmitter.write(msg);
   while ( CANTransmitter.read(rxmsg) ) {
     if (rxmsg.id == 0x205) {
       int can_now_ang = rxmsg.buf[0] * 256 + rxmsg.buf[1];
@@ -190,10 +194,9 @@ void timerInt() {
       now_ang = can_now_ang;
     }
     if (rxmsg.id == 0x71) {
-//      place = rxmsg.buf[0];
-//      hand_task = rxmsg.buf[0];
-      place = 1;
-      hand_task = 1;
+      place = rxmsg.buf[0];
+      hand_task = rxmsg.buf[1];
+      hand_num = rxmsg.buf[2];
     }
   }
 }
