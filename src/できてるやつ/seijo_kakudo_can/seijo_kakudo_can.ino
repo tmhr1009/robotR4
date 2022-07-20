@@ -115,6 +115,15 @@ void loop() {
   u[0] = pid0.pid_out(u[0]);
   u[1] = pid1.pid_out(u[1]);
   u[2] = pid2.pid_out(u[2]);
+  Serial.print("u[0] : ");
+  Serial.print(u[0]);
+  Serial.println();
+  Serial.print("u[1] : ");
+  Serial.print(u[1]);
+  Serial.println();
+  Serial.print("u[2] : ");
+  Serial.print(u[2]);
+  Serial.println();
 
   for (int i = 0; i < msg.len; i++) {
     msg.buf[i * 2] = u[i] >> 8;

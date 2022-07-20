@@ -13,7 +13,7 @@ void setup() {
 void loop() {
   //  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
   // in steps of 1 degree
-  myservo_ver.write(88);
+  myservo_par.write(94);
   delay(15);
   //}
 }
