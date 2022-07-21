@@ -48,6 +48,11 @@ int void_switch_num = 0;
 int table_gosa = 100; //許容範囲とするテーブル誤差
 int tgt_ang = table_pos[0]; //目標値
 int ang_u[4] = {0};
+//int arm_ver_down = 87;
+//int arm_ver_up = 87;
+//int par_ver_flont = 87;
+//int par_ver_back = 87;
+
 
 long vel[2];
 int flag = 0;
@@ -59,6 +64,7 @@ int u[4] = {0};
 int now_dir = 0;//0=北, 1=南, 2=西, 3=東
 int pos_dir[4] = {0, 180, 270, 90};
 int goal_dir = 0;
+int state__send = 0;
 
 void setup() {
   CANTransmitter.begin();
@@ -67,8 +73,8 @@ void setup() {
   pid2.init(6.2, 0.05, 0);
   pidpid.init(150.0, 0, 1);
   pid_ang.init(7.5, 0.0, 0.02);
-  myservo_ver.attach(14);
-  myservo_par.attach(15);
+  myservo_ver.attach(22);//垂直？
+  myservo_par.attach(23);//水平?
   pinMode(6, OUTPUT); //電磁弁
   pinMode(7, OUTPUT); //真空モータ
   Serial.begin(115200);
@@ -90,6 +96,7 @@ void setup() {
   digitalWrite(5, LOW);
   MsTimer2::set(2, timerInt);
   MsTimer2::start();
+  startup_arm();
   if (!bno.begin())
   {
     Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
@@ -124,7 +131,13 @@ void loop() {
 
   vx = vel[0];
   vy = vel[1];
+  if (!((vel[0] == 0) || (vel[1] == 0))) {
+    state__send = 2;
+  } else {
+    state__send = 0;
+  }
 
+  Serial.println();
   Serial.print("vel[] : ");
   Serial.print(vel[0]);
   Serial.print(", ");
@@ -136,7 +149,6 @@ void loop() {
   Serial.print("vt : ");
   Serial.print(vt);
   Serial.println();
-  Serial.println();
 
   vt = min(max(vt, -500), 500);
 
@@ -147,6 +159,7 @@ void loop() {
   u[0] = pid0.pid_out(u[0]);
   u[1] = pid11.pid_out(u[1]);
   u[2] = pid2.pid_out(u[2]);
+  Serial.println();
   Serial.print("u[0] : ");
   Serial.print(u[0]);
   Serial.println();
@@ -160,10 +173,16 @@ void loop() {
   //  for (int i = 0; i < 4; i++)u[i] = 0;
 
   //テーブル，アーム制御
-  if (!(hand__task == ca_re)) flag1 = 0;
+  if (!(hand__task == ca_re)) {
+    now_tgt_place = 0;
+    place = 0;
+    stage__arm = 0;
+    ca_re = 0;
+    flag1 = 0;
+  }
   ca_re = hand__task;
 
-  // 0=ca(拾う)
+  // 1=ca(拾う)
   if (ca_re == 1) {
     if (flag1 == 0) {
       switch (stage__arm) {
@@ -171,6 +190,7 @@ void loop() {
           now_tgt_place = 0;
           tim_t = millis();
           stage__arm++;
+          state__send = 3;
           break;
         case 1:
           //テーブルホームでアーム降下
@@ -211,8 +231,10 @@ void loop() {
         case 6:
           flag1 = 1;
           now_tgt_place = 0;
+          place = 0;
           stage__arm = 0;
           arm_stop_ver_par();
+          state__send = 0;
           break;
       }
     }
@@ -224,6 +246,7 @@ void loop() {
           now_tgt_place = hand__num;
           tim_t = millis();
           stage__arm++;
+          state__send = 3;
           break;
         case 1:
           //取り出すところまでテーブル回転
@@ -280,7 +303,9 @@ void loop() {
           flag1 = 1;
           now_tgt_place = 0;
           stage__arm = 0;
+          place = 0;
           arm_stop_ver_par();
+          state__send = 0;
           break;
       }
     }
@@ -311,8 +336,12 @@ void timerInt() {
   }
 
   if (digitalRead(13) == HIGH) {
-    state_msg.buf[0] = 4;
     flag1 = 0;
+    state_msg.buf[0] = 4;
+    digitalWrite(6, HIGH);
+    digitalWrite(7, LOW);
+    myservo_ver.write(97);
+    myservo_par.write(96);
     for (int i = 0; i < msg.len; i++) {
       msg.buf[i * 2] = 0;
       msg.buf[i * 2 + 1] = 0;
@@ -347,6 +376,9 @@ void timerInt() {
       pid11.now_value(rxmsg.buf[2] * 256 + rxmsg.buf[3]);
     }
     if (rxmsg.id == 0x203) {
+      pid2.now_value(rxmsg.buf[2] * 256 + rxmsg.buf[3]);
+    }
+    if (rxmsg.id == 0x205) {
       int can_now_ang = rxmsg.buf[0] * 256 + rxmsg.buf[1];
       pid_ang.now_value(can_now_ang);
       now_ang = can_now_ang;
@@ -358,9 +390,6 @@ void timerInt() {
 void robo_reset() {
   state_msg.buf[0] = 0;
   for (int i = 0; i < NUM_LEDS; i++)
-      pid2.now_value(rxmsg.buf[2] * 256 + rxmsg.buf[3]);
-    }
-    if (rxmsg.id == 0x205) {
     leds[i] = CRGB(255, 255, 0);//黄
 }
 
@@ -371,10 +400,15 @@ void robo_start() {
   state_msg.buf[0] = 1;
 }
 
+void startup_arm() {
+  myservo_ver.write(103);
+  myservo_par.write(104);
+}
+
 //吸い込みアーム降下 ver_down_pick
 int arm_ver_down_pick(int init_tim_t, int now_tim_t) {
   if (now_tim_t - init_tim_t < 2500) {
-    myservo_ver.write(85);
+    myservo_ver.write(87);
     return 1;
   } else {
     myservo_ver.write(97);
@@ -396,8 +430,8 @@ int arm_ver_up_pick(int init_tim_t, int now_tim_t)
 
 //アーム降下 ver_down
 int arm_ver_down(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 8000) { // 11000
-    myservo_ver.write(85);
+  if (now_tim_t - init_tim_t < 10500) { // 11000
+    myservo_ver.write(86);
     return 1;
   } else {
     myservo_ver.write(97);
@@ -407,9 +441,8 @@ int arm_ver_down(int init_tim_t, int now_tim_t) {
 
 //アーム上昇 ver_up
 int arm_ver_up(int init_tim_t, int now_tim_t) {
-
-  if (now_tim_t - init_tim_t < 11000) { // 13500
-    myservo_ver.write(109);
+  if (now_tim_t - init_tim_t < 10000) { // 13500
+    myservo_ver.write(106);
     return 1;
   } else {
     myservo_ver.write(97);
@@ -419,13 +452,13 @@ int arm_ver_up(int init_tim_t, int now_tim_t) {
 
 //アーム前進 par_flont
 int arm_par_flont(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 4000) {
-    myservo_par.write(84);
+  if (now_tim_t - init_tim_t < 4500) {
+    myservo_par.write(87);
     myservo_ver.write(104);
     return 1;
   } else if (now_tim_t - init_tim_t < 10000) {
-    myservo_par.write(84);
-    myservo_ver.write(94);
+    myservo_par.write(87);
+    myservo_ver.write(92);
     return 1;
   } else {
     myservo_par.write(96);
@@ -447,7 +480,7 @@ int arm_par_back(int init_tim_t, int now_tim_t) {
 
 //吸盤吸い込み vac_pick
 int vac_pick(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 2000) {
+  if (now_tim_t - init_tim_t < 1500) {
     digitalWrite(6, LOW);
     digitalWrite(7, HIGH);
     return 1;
@@ -460,7 +493,7 @@ int vac_pick(int init_tim_t, int now_tim_t) {
 
 //吸盤脱力 vac_release
 int vac_release(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 2000) {
+  if (now_tim_t - init_tim_t < 1000) {
     digitalWrite(6, HIGH);
     digitalWrite(7, LOW);
     return 1;
@@ -513,6 +546,8 @@ void ang_serial() {
   Serial.println(stage__arm);
   Serial.print("hand__num: ");
   Serial.println(hand__num);
+  Serial.print("state__send: ");
+  Serial.println(state__send);
   Serial.print("void int: ");
   Serial.println(millis() - tim_t);
   Serial.println();
