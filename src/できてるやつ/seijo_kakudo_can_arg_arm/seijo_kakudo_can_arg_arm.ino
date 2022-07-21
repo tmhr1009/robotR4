@@ -45,7 +45,7 @@ int tim_t = 0;
 int now_ang = 0;
 int hand__task = 0;
 int void_switch_num = 0;
-int table_gosa = 100; //許容範囲とするテーブル誤差
+int table_gosa = 110;//許容範囲とするテーブル誤差
 int tgt_ang = table_pos[0]; //目標値
 int ang_u[4] = {0};
 //int arm_ver_down = 87;
@@ -96,7 +96,6 @@ void setup() {
   digitalWrite(5, LOW);
   MsTimer2::set(2, timerInt);
   MsTimer2::start();
-  startup_arm();
   if (!bno.begin())
   {
     Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
@@ -174,22 +173,38 @@ void loop() {
 
   //テーブル，アーム制御
   if (!(hand__task == ca_re)) {
-    now_tgt_place = 0;
     place = 0;
     stage__arm = 0;
     ca_re = 0;
     flag1 = 0;
   }
+
+  if (hand__task == 7) {
+    myservo_ver.write(97);
+    myservo_par.write(96);
+    now_tgt_place = 0;
+    place = 0;
+    stage__arm = 0;
+    ca_re = 0;
+    ang_serial();
+  }
+
   ca_re = hand__task;
 
   // 1=ca(拾う)
-  if (ca_re == 1) {
+  if (ca_re == 0) {
+    if (!(state_msg.buf[0] == 4)) {
+      startup_arm();
+    }
+  } else if (ca_re == 1) {
     if (flag1 == 0) {
       switch (stage__arm) {
         case 0:
           now_tgt_place = 0;
-          tim_t = millis();
-          stage__arm++;
+          if (arg_spot_home(tim_t, millis()) == 0) {
+            tim_t = millis();
+            stage__arm++;
+          }
           state__send = 3;
           break;
         case 1:
@@ -234,7 +249,6 @@ void loop() {
           place = 0;
           stage__arm = 0;
           arm_stop_ver_par();
-          state__send = 0;
           break;
       }
     }
@@ -301,18 +315,16 @@ void loop() {
           break;
         case 8:
           flag1 = 1;
-          now_tgt_place = 0;
           stage__arm = 0;
           place = 0;
           arm_stop_ver_par();
-          state__send = 0;
           break;
       }
     }
   }
 
   for (int i = 0; i < 4; i++)
-    ang_u[i] = max(min(pid_ang.pid_out(tgt_ang), 1000), -1000);
+    ang_u[i] = max(min(pid_ang.pid_out(tgt_ang), 1500), -1500);
   for (int i = 0; i < ang_msg.len; i++) {
     ang_msg.buf[i * 2] = ang_u[i] >> 8;
     ang_msg.buf[i * 2 + 1] = ang_u[i] & 0x00FF;
@@ -321,6 +333,7 @@ void loop() {
     msg.buf[i * 2] = u[i] >> 8;
     msg.buf[i * 2 + 1] = u[i] & 0xFF;
   }
+  //    state_msg.buf[0] = state__send;
 
   cou++;
   delay(5);
@@ -328,6 +341,9 @@ void loop() {
 
 void timerInt() {
   tgt_ang = table_pos[now_tgt_place];
+  if (hand__task == 7) {
+    robo_reset();
+  }
   if (state_msg.buf[0] == 4) {
     flag = 0;
   }
@@ -340,8 +356,8 @@ void timerInt() {
     state_msg.buf[0] = 4;
     digitalWrite(6, HIGH);
     digitalWrite(7, LOW);
-    myservo_ver.write(97);
-    myservo_par.write(96);
+    myservo_ver.write(95);
+    myservo_par.write(94);
     for (int i = 0; i < msg.len; i++) {
       msg.buf[i * 2] = 0;
       msg.buf[i * 2 + 1] = 0;
@@ -401,14 +417,16 @@ void robo_start() {
 }
 
 void startup_arm() {
-  myservo_ver.write(103);
-  myservo_par.write(104);
+  myservo_ver.write(100);
+  myservo_par.write(100);
+  digitalWrite(6, HIGH);
+  digitalWrite(7, LOW);
 }
 
 //吸い込みアーム降下 ver_down_pick
 int arm_ver_down_pick(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 2500) {
-    myservo_ver.write(87);
+  if (now_tim_t - init_tim_t < 1900) {
+    myservo_ver.write(85);
     return 1;
   } else {
     myservo_ver.write(97);
@@ -419,8 +437,8 @@ int arm_ver_down_pick(int init_tim_t, int now_tim_t) {
 //吸い込みアーム上昇 ver_up_pick
 int arm_ver_up_pick(int init_tim_t, int now_tim_t)
 {
-  if (now_tim_t - init_tim_t < 3500) {
-    myservo_ver.write(109);
+  if (now_tim_t - init_tim_t < 1800) {
+    myservo_ver.write(110);
     return 1;
   } else {
     myservo_ver.write(97);
@@ -430,8 +448,8 @@ int arm_ver_up_pick(int init_tim_t, int now_tim_t)
 
 //アーム降下 ver_down
 int arm_ver_down(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 10500) { // 11000
-    myservo_ver.write(86);
+  if (now_tim_t - init_tim_t < 4250) { // 11000
+    myservo_ver.write(78);
     return 1;
   } else {
     myservo_ver.write(97);
@@ -441,8 +459,8 @@ int arm_ver_down(int init_tim_t, int now_tim_t) {
 
 //アーム上昇 ver_up
 int arm_ver_up(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 10000) { // 13500
-    myservo_ver.write(106);
+  if (now_tim_t - init_tim_t < 4500) { // 13500
+    myservo_ver.write(115);
     return 1;
   } else {
     myservo_ver.write(97);
@@ -453,12 +471,8 @@ int arm_ver_up(int init_tim_t, int now_tim_t) {
 //アーム前進 par_flont
 int arm_par_flont(int init_tim_t, int now_tim_t) {
   if (now_tim_t - init_tim_t < 4500) {
-    myservo_par.write(87);
+    myservo_par.write(78);
     myservo_ver.write(104);
-    return 1;
-  } else if (now_tim_t - init_tim_t < 10000) {
-    myservo_par.write(87);
-    myservo_ver.write(92);
     return 1;
   } else {
     myservo_par.write(96);
@@ -469,8 +483,8 @@ int arm_par_flont(int init_tim_t, int now_tim_t) {
 
 //アーム後退 par_back
 int arm_par_back(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 10000) {
-    myservo_par.write(106);
+  if (now_tim_t - init_tim_t < 4900) {
+    myservo_par.write(113);
     return 1;
   } else {
     myservo_par.write(96);
@@ -480,7 +494,7 @@ int arm_par_back(int init_tim_t, int now_tim_t) {
 
 //吸盤吸い込み vac_pick
 int vac_pick(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 1500) {
+  if (now_tim_t - init_tim_t < 350) {
     digitalWrite(6, LOW);
     digitalWrite(7, HIGH);
     return 1;
@@ -493,7 +507,7 @@ int vac_pick(int init_tim_t, int now_tim_t) {
 
 //吸盤脱力 vac_release
 int vac_release(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 1000) {
+  if (now_tim_t - init_tim_t < 350) {
     digitalWrite(6, HIGH);
     digitalWrite(7, LOW);
     return 1;
@@ -524,6 +538,13 @@ int arg_spot_home(int init_tim_t, int now_tim_t) {
   } else {
     return 1;
   }
+}
+
+void box__reset() {
+  now_tgt_place = 0;
+  place = 0;
+  stage__arm = 0;
+  ca_re = 0;
 }
 
 void ang_serial() {
