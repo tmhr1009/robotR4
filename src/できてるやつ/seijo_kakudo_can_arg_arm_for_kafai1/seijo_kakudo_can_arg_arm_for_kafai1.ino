@@ -252,6 +252,120 @@ void loop() {
           break;
       }
     }
+  } else if (ca_re == 8) {
+    if (flag1 == 0) {
+      switch (stage__arm) {
+        case 0:
+          now_tgt_place = 0;
+          if (arg_spot_home(tim_t, millis()) == 0) {
+            tim_t = millis();
+            stage__arm++;
+          }
+
+          state__send = 3;
+          break;
+        case 1:
+          //テーブルホームでアーム降下
+          if (arm_ver_down(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 2:
+          //吸盤吸い込み
+          if (vac_pick(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 3:
+          if (arm_ver_up(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 4:
+          //置くところまでテーブル回転
+          now_tgt_place = 2;
+          myservo_ver.write(107);
+          if (arg_move_end_kadai1(tim_t, millis(), 2) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 5:
+          //吸盤離す
+          if (vac_release(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 6:
+          place = 0;
+          now_tgt_place = 0;
+          if (arg_spot_home(tim_t, millis()) == 0) {
+            tim_t = millis();
+            stage__arm++;
+          }
+          break;
+        case 7:
+          if (par_flont_second(tim_t, millis()) == 0) {
+            tim_t = millis();
+            stage__arm++;
+          }
+          break;
+        case 8:
+          //アーム降下
+          if (arm_ver_down(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 9:
+          //吸盤吸い込み
+          if (vac_pick(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 10:
+          if (arm_ver_up(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 11:
+          now_tgt_place = 1;
+          if (par_back_second(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 12:
+          //置くところまでテーブル回転
+          now_tgt_place = 1;
+          myservo_ver.write(107);
+          if (arg_move_end_kadai1(tim_t, millis(), 1) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 13:
+          //吸盤離す
+          if (vac_release(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 14:
+          flag1 = 1;
+          now_tgt_place = 0;
+          place = 0;
+          stage__arm = 0;
+          arm_stop_ver_par();
+          break;
+      }
+    }
   } else if (ca_re == 4) { //課題１用 ワークつかみ
     if (flag1 == 0) {
       switch (stage__arm) {
@@ -730,7 +844,7 @@ int arm_ver_up_pick(int init_tim_t, int now_tim_t)
 
 //アーム降下 ver_down
 int arm_ver_down(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 3900) { // 11000
+  if (now_tim_t - init_tim_t < 4500) { // 11000
     myservo_ver.write(78);
     return 1;
   } else {
