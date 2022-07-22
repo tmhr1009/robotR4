@@ -252,7 +252,7 @@ void loop() {
           break;
       }
     }
-  } else if (ca_re == 4) {
+  } else if (ca_re == 4) { //課題１用 ワークつかみ
     if (flag1 == 0) {
       switch (stage__arm) {
         case 0:
@@ -261,6 +261,7 @@ void loop() {
             tim_t = millis();
             stage__arm++;
           }
+
           state__send = 3;
           break;
         case 1:
@@ -483,10 +484,78 @@ void loop() {
           break;
       }
     }
+  } else if (ca_re == 5) { //課題１用 ワーク吐き出し
+    if (flag1 == 0) {
+      switch (stage__arm) {
+        case 0:
+          now_tgt_place = hand__num;
+          tim_t = millis();
+          stage__arm++;
+          state__send = 3;
+          break;
+        case 1:
+          //取り出すところまでテーブル回転
+          place = hand__num;
+          if (arg_move_end(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 2:
+          //アーム降下
+          if (arm_ver_down_pick(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 3:
+          //吸盤吸い込み
+          if (vac_pick(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 4:
+          //アーム降下上昇
+          if (arm_ver_up_pick(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 5:
+          //アーム前進
+          if (arm_par_flont(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 6:
+          //吸盤開放 落とす
+          if (vac_release(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 7:
+          //アーム後退
+          myservo_ver.write(110);
+          if (arm_par_back(tim_t, millis()) == 0) {
+            stage__arm++;
+            tim_t = millis();
+          }
+          break;
+        case 8:
+          flag1 = 1;
+          stage__arm = 0;
+          place = 0;
+          arm_stop_ver_par();
+          break;
+      }
+    }
   }
 
   for (int i = 0; i < 4; i++)
-    ang_u[i] = max(min(pid_ang.pid_out(tgt_ang), 1500), -1500);
+    ang_u[i] = max(min(pid_ang.pid_out(tgt_ang), 1700), -1700);
   for (int i = 0; i < ang_msg.len; i++) {
     ang_msg.buf[i * 2] = ang_u[i] >> 8;
     ang_msg.buf[i * 2 + 1] = ang_u[i] & 0x00FF;
@@ -520,6 +589,8 @@ void timerInt() {
     digitalWrite(7, LOW);
     myservo_ver.write(95);
     myservo_par.write(94);
+    goaltg = 0;
+    pidpid.now_value(0);
     for (int i = 0; i < msg.len; i++) {
       msg.buf[i * 2] = 0;
       msg.buf[i * 2 + 1] = 0;
@@ -567,6 +638,7 @@ void timerInt() {
 
 void robo_reset() {
   state_msg.buf[0] = 0;
+  now_tgt_place = 0;
   for (int i = 0; i < NUM_LEDS; i++)
     leds[i] = CRGB(255, 255, 0);//黄
 }
@@ -600,7 +672,7 @@ int par_flont_second(int init_tim_t, int now_tim_t) {
 
 //３回目アーム前進 par_flont_third
 int par_flont_third(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 2500) {
+  if (now_tim_t - init_tim_t < 2750) {
     myservo_par.write(78);
     myservo_ver.write(104);
     return 1;
@@ -624,7 +696,7 @@ int par_back_second(int init_tim_t, int now_tim_t) {
 
 //３回目アーム後退 par_back_third
 int par_back_third(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 2500) {
+  if (now_tim_t - init_tim_t < 2750) {
     myservo_par.write(113);
     return 1;
   } else {
@@ -694,7 +766,7 @@ int arm_par_flont(int init_tim_t, int now_tim_t) {
 //アーム後退 par_back
 int arm_par_back(int init_tim_t, int now_tim_t) {
   if (now_tim_t - init_tim_t < 5000) {
-    myservo_par.write(113);
+    myservo_par.write(119);
     return 1;
   } else {
     myservo_par.write(96);
