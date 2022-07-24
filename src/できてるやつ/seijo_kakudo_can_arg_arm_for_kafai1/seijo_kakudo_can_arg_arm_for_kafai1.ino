@@ -357,6 +357,7 @@ void loop() {
           }
           break;
         case 5:
+          now_tgt_place = 2;
           if (arm_par_back(tim_t, millis()) == 0) {
             stage__arm++;
             tim_t = millis();
@@ -415,6 +416,7 @@ void loop() {
           }
           break;
         case 13:
+          now_tgt_place = 1;
           if (arm_par_back(tim_t, millis()) == 0) {
             stage__arm++;
             tim_t = millis();
@@ -937,7 +939,7 @@ int par_flont_kadai2_2(int init_tim_t, int now_tim_t) {
 
 //課題２ ２連続１
 int par_flont_k2_2_1(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t < 1750) {
+  if (now_tim_t - init_tim_t < 1900) {
     myservo_par.write(78);
     myservo_ver.write(104);
     return 1;
@@ -950,7 +952,7 @@ int par_flont_k2_2_1(int init_tim_t, int now_tim_t) {
 
 //課題２ ２連続２
 int par_flont_k2_2_2(int init_tim_t, int now_tim_t) {
-  if (now_tim_t - init_tim_t <3000) {
+  if (now_tim_t - init_tim_t < 3250) {
     myservo_par.write(78);
     myservo_ver.write(104);
     return 1;
