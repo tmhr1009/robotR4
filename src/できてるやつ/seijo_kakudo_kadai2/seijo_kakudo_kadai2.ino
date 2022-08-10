@@ -66,6 +66,8 @@ int pos_dir = 0;
 int goal_dir = 0;
 int state__send = 0;
 int timestop_switchst = 0;
+int movetast_state = 0;
+int onlymove_tt = 0;
 
 void setup() {
   CANTransmitter.begin();
@@ -139,18 +141,18 @@ void loop() {
     state__send = 0;
   }
 
-  // Serial.println();
-  // Serial.print("vel[] : ");
-  // Serial.print(vel[0]);
-  // Serial.print(", ");
-  // Serial.print(vel[1]);
-  // Serial.println();
-  // Serial.print("goaltg : ");
-  // Serial.print(pos_dir);
-  // Serial.println();
-  // Serial.print("vt : ");
-  // Serial.print(vt);
-  // Serial.println();
+  Serial.println();
+  Serial.print("vel[] : ");
+  Serial.print(vel[0]);
+  Serial.print(", ");
+  Serial.print(vel[1]);
+  Serial.println();
+  Serial.print("goaltg : ");
+  Serial.print(pos_dir);
+  Serial.println();
+  Serial.print("vt : ");
+  Serial.print(vt);
+  Serial.println();
 
   vt = min(max(vt, -500), 500);
 
@@ -757,7 +759,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_str(tim_t, millis(), place) == 0) {
+          if (time_move_str(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -776,7 +778,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_back(tim_t, millis(), place) == 0) {
+          if (time_move_back(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -795,7 +797,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_left(tim_t, millis(), place) == 0) {
+          if (time_move_left(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -814,7 +816,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_right(tim_t, millis(), place) == 0) {
+          if (time_move_right(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -833,7 +835,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_str_200(tim_t, millis(), place) == 0) {
+          if (time_move_str_200(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -852,7 +854,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_str_100(tim_t, millis(), place) == 0) {
+          if (time_move_str_100(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -871,7 +873,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_str_50(tim_t, millis(), place) == 0) {
+          if (time_move_str_50(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -890,7 +892,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_left_100(tim_t, millis(), place) == 0) {
+          if (time_move_left_100(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -909,7 +911,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_left_50(tim_t, millis(), place) == 0) {
+          if (time_move_left_50(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -920,7 +922,7 @@ void loop() {
           break;
       }
     }
-  }else if (ca_re == 120) { //時間で移動する 右行-100
+  } else if (ca_re == 120) { //時間で移動する 右行-100
     if (flag1 == 0) {
       switch (timestop_switchst) {
         case 0:
@@ -928,7 +930,7 @@ void loop() {
           timestop_switchst++;
           break;
         case 1:
-          if (time_move_right_50(tim_t, millis(), place) == 0) {
+          if (time_move_right_50(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
@@ -939,24 +941,74 @@ void loop() {
           break;
       }
     }
-  }else if (ca_re == 121) { //時間で移動する 右行-50
+  } else if (ca_re == 121) { //時間で移動する 右行-50
     if (flag1 == 0) {
       switch (timestop_switchst) {
         case 0:
           tim_t = millis();
           timestop_switchst++;
-           break;
+          break;
         case 1:
-          if (time_move_right_50(tim_t, millis(), place) == 0) {
+          if (time_move_right_50(tim_t, millis(), hand__num) == 0) {
             timestop_switchst++;
             tim_t = millis();
           }
-           break;
+          break;
         case 2:
           flag1 = 1;
           timestop_switchst = 0;
-           break;
+          break;
       }
+    }
+  }
+
+  if (state_msg.buf[0] == 1) {
+    onlymove_tt = 1;
+  }
+
+  if (onlymove_tt) {
+    switch (movetast_state) {
+      case 0:
+        if (time_move_str_100(tim_t, millis(), 700) == 0) {
+          movetast_state++;
+          tim_t = millis();
+        }
+        break;
+      case 1:
+        if (kaiten_jikan(tim_t, millis(), 180) == 0) {
+          movetast_state++;
+          tim_t = millis();
+        }
+        break;
+      case 2:
+        if (time_move_left_100(tim_t, millis(), 600) == 0) {
+          movetast_state++;
+          tim_t = millis();
+        }
+        break;
+      case 3:
+        if (time_move_str_100(tim_t, millis(), 400) == 0) {
+          movetast_state++;
+          tim_t = millis();
+          break;
+        }
+        break;
+      case 4:
+        hand__task = 0;
+        hand__num = 6;
+        tim_t = millis();
+        break;
+      case 5:
+        hand__task = 1;
+        if (timer_ms_ji(tim_t, millis(), 2400) == 0) {
+          movetast_state++;
+          tim_t = millis();
+        }
+        break;
+      case 6:
+        onlymove_tt = 1;
+        hand__task = 0;
+        movetast_state = 0;
     }
   }
 
@@ -1019,11 +1071,11 @@ void timerInt() {
       vel[1] = -1 * map(rxmsg.buf[2] + rxmsg.buf[3] * 256, 0, 65535, 1023, -1023);
     }
     if (rxmsg.id == 0x71) {
-      goal_dir = rxmsg.buf[0];
-      pos_dir = rxmsg.buf[0];
-      hand__task = rxmsg.buf[1];
-      hand__num = rxmsg.buf[2];
-      place = rxmsg.buf[2];
+//      goal_dir = rxmsg.buf[0];
+//      pos_dir = rxmsg.buf[0];
+//      hand__task = rxmsg.buf[1];
+//      hand__num = rxmsg.buf[2];
+//      place = rxmsg.buf[2];
     }
     if (rxmsg.id == 0x201) {
       pid0.now_value(rxmsg.buf[2] * 256 + rxmsg.buf[3]);
@@ -1065,9 +1117,30 @@ void startup_arm() {
   digitalWrite(7, LOW);
 }
 
+
+//回転　
+int kaiten_jikan(int init_tim_t, int now_tim_t, int goal_kaiten) {
+  if (now_tim_t - init_tim_t < 6000) {
+    pos_dir = goal_kaiten;
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+//ms timer　
+int timer_ms_ji(int init_tim_t, int now_tim_t, int time_ss) {
+  if (now_tim_t - init_tim_t < time_ss) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+
 //指定時間前進　tast=100
 int time_move_str(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = -300;
     vy = 0;
     return 1;
@@ -1080,7 +1153,7 @@ int time_move_str(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間前進　tast=105 200
 int time_move_str_200(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = -200;
     vy = 0;
     return 1;
@@ -1093,7 +1166,7 @@ int time_move_str_200(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間前進　tast=106 100
 int time_move_str_100(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = -100;
     vy = 0;
     return 1;
@@ -1106,7 +1179,7 @@ int time_move_str_100(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間前進　tast=107 50
 int time_move_str_50(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = -50;
     vy = 0;
     return 1;
@@ -1119,7 +1192,7 @@ int time_move_str_50(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間後退　tast=101
 int time_move_back(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = 300;
     vy = 0;
     return 1;
@@ -1132,7 +1205,7 @@ int time_move_back(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間左行　tast=102
 int time_move_left(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = 0;
     vy = 300;
     return 1;
@@ -1145,7 +1218,7 @@ int time_move_left(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間左行　tast=110 100
 int time_move_left_100(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = 0;
     vy = 100;
     return 1;
@@ -1158,7 +1231,7 @@ int time_move_left_100(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間左行　tast=111 50
 int time_move_left_50(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = 0;
     vy = 50;
     return 1;
@@ -1171,7 +1244,7 @@ int time_move_left_50(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間右行　tast=103
 int time_move_right(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = 0;
     vy = -300;
     return 1;
@@ -1184,7 +1257,7 @@ int time_move_right(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間右行　tast=120-100
 int time_move_right_100(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = 0;
     vy = -100;
     return 1;
@@ -1197,7 +1270,7 @@ int time_move_right_100(int init_tim_t, int now_tim_t, int movetime) {
 
 //指定時間右行　tast=121-50
 int time_move_right_50(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
+  if (now_tim_t - init_tim_t < movetime * 10) {
     vx = 0;
     vy = -50;
     return 1;

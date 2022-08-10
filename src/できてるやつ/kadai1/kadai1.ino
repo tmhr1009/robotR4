@@ -62,10 +62,9 @@ int goal = 0;
 int goaltg = 0;
 int u[4] = {0};
 int now_dir = 0;//0=北, 1=南, 2=西, 3=東
-int pos_dir = 0;
+int pos_dir[4] = {0, 180, 270, 90};
 int goal_dir = 0;
 int state__send = 0;
-int timestop_switchst = 0;
 
 void setup() {
   CANTransmitter.begin();
@@ -112,7 +111,7 @@ void loop() {
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   int gyro_x = euler.x();
   pidpid.now_value(gyro_x);
-  goaltg = pos_dir;
+  goaltg = pos_dir[goal_dir];
 
   if (goaltg > 360)goaltg = goaltg - 360;
   if (goaltg < 0)goaltg = goaltg + 360;
@@ -129,28 +128,26 @@ void loop() {
 
   //goaltg = goaltg + pos_dir[goal_dir];
 
-  if (ca_re != 100) {
-    vx = vel[0];
-    vy = vel[1];
-  }
+  vx = vel[0];
+  vy = vel[1];
   if (!((vel[0] == 0) || (vel[1] == 0))) {
     state__send = 2;
   } else {
     state__send = 0;
   }
 
-  // Serial.println();
-  // Serial.print("vel[] : ");
-  // Serial.print(vel[0]);
-  // Serial.print(", ");
-  // Serial.print(vel[1]);
-  // Serial.println();
-  // Serial.print("goaltg : ");
-  // Serial.print(pos_dir);
-  // Serial.println();
-  // Serial.print("vt : ");
-  // Serial.print(vt);
-  // Serial.println();
+  Serial.println();
+  Serial.print("vel[] : ");
+  Serial.print(vel[0]);
+  Serial.print(", ");
+  Serial.print(vel[1]);
+  Serial.println();
+  Serial.print("goaltg : ");
+  Serial.print(pos_dir[goal_dir]);
+  Serial.println();
+  Serial.print("vt : ");
+  Serial.print(vt);
+  Serial.println();
 
   vt = min(max(vt, -500), 500);
 
@@ -749,215 +746,6 @@ void loop() {
           break;
       }
     }
-  } else if (ca_re == 100) { //時間で移動する 前進
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_str(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  } else if (ca_re == 101) { //時間で移動する 後退
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_back(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  } else if (ca_re == 102) { //時間で移動する 左行
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_left(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  } else if (ca_re == 103) { //時間で移動する 左行
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_right(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  } else if (ca_re == 105) { //時間で移動する 前進-200
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_str_200(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  } else if (ca_re == 106) { //時間で移動する 前進-100
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_str_100(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  } else if (ca_re == 107) { //時間で移動する 前進-50
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_str_50(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  } else if (ca_re == 110) { //時間で移動する 左行-100
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_left_100(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  } else if (ca_re == 111) { //時間で移動する 左行-50
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_left_50(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  }else if (ca_re == 120) { //時間で移動する 右行-100
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-          break;
-        case 1:
-          if (time_move_right_50(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-          break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-          break;
-      }
-    }
-  }else if (ca_re == 121) { //時間で移動する 右行-50
-    if (flag1 == 0) {
-      switch (timestop_switchst) {
-        case 0:
-          tim_t = millis();
-          timestop_switchst++;
-           break;
-        case 1:
-          if (time_move_right_50(tim_t, millis(), place) == 0) {
-            timestop_switchst++;
-            tim_t = millis();
-          }
-           break;
-        case 2:
-          flag1 = 1;
-          timestop_switchst = 0;
-           break;
-      }
-    }
   }
 
   for (int i = 0; i < 4; i++)
@@ -1020,7 +808,6 @@ void timerInt() {
     }
     if (rxmsg.id == 0x71) {
       goal_dir = rxmsg.buf[0];
-      pos_dir = rxmsg.buf[0];
       hand__task = rxmsg.buf[1];
       hand__num = rxmsg.buf[2];
       place = rxmsg.buf[2];
@@ -1064,150 +851,6 @@ void startup_arm() {
   digitalWrite(6, HIGH);
   digitalWrite(7, LOW);
 }
-
-//指定時間前進　tast=100
-int time_move_str(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = -300;
-    vy = 0;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間前進　tast=105 200
-int time_move_str_200(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = -200;
-    vy = 0;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間前進　tast=106 100
-int time_move_str_100(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = -100;
-    vy = 0;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間前進　tast=107 50
-int time_move_str_50(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = -50;
-    vy = 0;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間後退　tast=101
-int time_move_back(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = 300;
-    vy = 0;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間左行　tast=102
-int time_move_left(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = 0;
-    vy = 300;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間左行　tast=110 100
-int time_move_left_100(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = 0;
-    vy = 100;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間左行　tast=111 50
-int time_move_left_50(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = 0;
-    vy = 50;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間右行　tast=103
-int time_move_right(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = 0;
-    vy = -300;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間右行　tast=120-100
-int time_move_right_100(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = 0;
-    vy = -100;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
-//指定時間右行　tast=121-50
-int time_move_right_50(int init_tim_t, int now_tim_t, int movetime) {
-  if (now_tim_t - init_tim_t < movetime * 100) {
-    vx = 0;
-    vy = -50;
-    return 1;
-  } else {
-    vx = 0;
-    vy = 0;
-    return 0;
-  }
-}
-
 
 //２回目アーム前進 par_flont_second
 int par_flont_second(int init_tim_t, int now_tim_t) {
